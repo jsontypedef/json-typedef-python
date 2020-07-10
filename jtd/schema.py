@@ -235,6 +235,8 @@ class Schema:
             return Form.TYPE
         if self.enum is not None:
             return Form.ENUM
+        if self.elements is not None:
+            return Form.ELEMENTS
         if self.properties is not None or self.optional_properties is not None:
             return Form.PROPERTIES
         if self.values is not None:
