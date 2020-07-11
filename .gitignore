@@ -1,5 +1,8 @@
 /build
 /dist
-/venv
+/env
 __pycache__
 /jtd.egg-info
+/docs/_build
+/docs/_static
+/docs/_templates

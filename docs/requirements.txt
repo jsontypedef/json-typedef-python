@@ -1,0 +1,2 @@
+strict_rfc3339==0.7
+sphinx-rtd-theme===0.4.3

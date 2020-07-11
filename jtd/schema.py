@@ -14,6 +14,10 @@ class Form(enum.Enum):
 
 @dataclasses.dataclass
 class Schema:
+    """
+    This is a test.
+    """
+
     metadata: Optional[Dict[str, Any]]
     nullable: Optional[bool]
     definitions: Optional[Dict[str, 'Schema']]
