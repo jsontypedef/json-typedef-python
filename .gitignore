@@ -1,2 +1,5 @@
+/build
+/dist
 /venv
 __pycache__
+/jtd.egg-info
