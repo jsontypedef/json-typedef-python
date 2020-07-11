@@ -4,7 +4,7 @@
 
 > This package implements JSON Typedef *validation* for JavaScript and
 > TypeScript. If you're trying to do JSON Typedef *code generation*, see
-> ["Generating TypeScript from JSON Typedef Schemas"][jtd-ts-codegen] in the
+> ["Generating TypeScript from JSON Typedef Schemas"][jtd-py-codegen] in the
 > JSON Typedef docs.
 
 `jtd` is a Python implementation of [JSON Type Definition][jtd], a schema
