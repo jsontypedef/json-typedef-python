@@ -1,2 +1,2 @@
 from .schema import Schema
-from .validate import ValidationError, validate
+from .validate import MaxDepthExceededError, ValidationError, ValidationOptions, validate

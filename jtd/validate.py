@@ -14,16 +14,23 @@ class ValidationOptions:
     max_depth: int = 0
     max_errors: int = 0
 
+class MaxDepthExceededError(Exception):
+    pass
+
 def validate(**kwargs) -> List[ValidationError]:
     state = _ValidationState(
-        config=kwargs.get('opts', ValidationOptions()),
+        config=kwargs.get('options', ValidationOptions()),
         root_schema=kwargs['schema'],
         instance_tokens=[],
         schema_tokens=[[]],
         errors=[],
     )
 
-    _validate_with_state(state, kwargs['schema'], kwargs['instance'], None)
+    try:
+        _validate_with_state(state, kwargs['schema'], kwargs['instance'], None)
+    except _MaxErrorsReached:
+        pass
+
     return state.errors
 
 @dataclasses.dataclass
@@ -52,12 +59,21 @@ class _ValidationState:
             schema_path=self.schema_tokens[-1].copy(),
         ))
 
+        if len(self.errors) == self.config.max_errors:
+            raise _MaxErrorsReached()
+
+class _MaxErrorsReached(Exception):
+    pass
+
 def _validate_with_state(state: _ValidationState, schema: Schema, instance: Any, parent_tag: Optional[str]):
     if schema.nullable and instance is None:
         return
 
     form = schema.form()
     if form == form.REF:
+        if len(state.schema_tokens) == state.config.max_depth:
+            raise MaxDepthExceededError()
+
         state.schema_tokens.append(["definitions", schema.ref])
         _validate_with_state(state, state.root_schema.definitions[schema.ref], instance, None)
         state.schema_tokens.pop()

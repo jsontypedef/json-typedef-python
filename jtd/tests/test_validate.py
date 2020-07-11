@@ -9,7 +9,25 @@ SKIPPED_TESTS = [
 ]
 
 class TestSchema(unittest.TestCase):
-    def test_invalid_schemas(self):
+    def test_max_depth(self):
+        schema = jtd.Schema.from_dict({
+            'definitions': { 'loop': { 'ref': 'loop' }},
+            'ref': 'loop'
+        })
+
+        with self.assertRaises(jtd.MaxDepthExceededError):
+            options = jtd.ValidationOptions(max_depth=32)
+            jtd.validate(schema=schema, instance=None, options=options)
+
+    def test_max_errors(self):
+        schema = jtd.Schema.from_dict({ 'elements': { 'type': 'string' }})
+        instance = [None, None, None, None, None]
+        options = jtd.ValidationOptions(max_errors=3)
+        errors = jtd.validate(schema=schema, instance=instance, options=options)
+
+        self.assertEqual(3, len(errors))
+
+    def test_validation(self):
         with open("json-typedef-spec/tests/validation.json") as f:
             test_cases = json.loads(f.read())
             for k, v in test_cases.items():
