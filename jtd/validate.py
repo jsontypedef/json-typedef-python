@@ -6,18 +6,76 @@ from .schema import Form, Schema
 
 @dataclasses.dataclass
 class ValidationError:
+    """Represents a single issue that a schema had with an instance."""
+
     instance_path: List[str]
+    """Path to the part of the instance that was rejected."""
+
     schema_path: List[str]
+    """Path to the part of the schema that did the rejecting."""
 
 @dataclasses.dataclass
 class ValidationOptions:
+    """Represents options that can be passed to :func:`validate`."""
+
     max_depth: int = 0
+    """
+    The maximum number of refs that will be followed at once before raising
+    :class:`MaxDepthExceededError`.
+
+    A value of zero means that all refs will be followed, and
+    :class:`MaxDepthExceededError` is never raised. Ultimately, stack overflow
+    may cause an error instead.
+    """
+
     max_errors: int = 0
+    """
+    The maximum number of errors that will be returned.
+
+    A value of zero means that all errors will be returned.
+    """
 
 class MaxDepthExceededError(Exception):
+    """
+    Indicates that ref recursion depth exceeded the limit put in place by
+    ``max_depth`` in :class:`ValidationOptions`.
+    """
+
     pass
 
 def validate(**kwargs) -> List[ValidationError]:
+    """
+    Performs JSON Typedef validation, and returns a list of validation errors.
+
+    Provide the schema using the `schema` keyword argument, and the instance
+    with the `instance` keyword argument. Optionally, you can pass
+    :class:`ValidationOptions` with the `options` keyword argument.
+
+    >>> import jtd
+    >>> schema = jtd.Schema.from_dict({ 'type': 'string' })
+    >>> jtd.validate(schema=schema, instance="foo")
+    []
+    >>> jtd.validate(schema=schema, instance=None)
+    [ValidationError(instance_path=[], schema_path=['type'])]
+
+    >>> import jtd
+    >>> schema = jtd.Schema.from_dict({ 'elements': { 'type': 'string' }})
+    >>> len(jtd.validate(schema=schema, instance=[None] * 5))
+    5
+    >>> options = jtd.ValidationOptions(max_errors=3)
+    >>> len(jtd.validate(schema=schema, instance=[None] * 5, options=options))
+    3
+
+    >>> import jtd
+    >>> schema = { 'definitions': { 'loop': { 'ref': 'loop' }}, 'ref': 'loop' }
+    >>> schema = jtd.Schema.from_dict(schema)
+    >>> options = jtd.ValidationOptions(max_depth=32)
+    >>> jtd.validate(schema=schema, instance=None, options=options)
+    Traceback (most recent call last):
+        ...
+    MaxDepthExceededError
+    """
+
     state = _ValidationState(
         config=kwargs.get('options', ValidationOptions()),
         root_schema=kwargs['schema'],

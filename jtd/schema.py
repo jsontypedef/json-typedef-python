@@ -3,6 +3,12 @@ import enum
 from typing import Any, Dict, List, Optional
 
 class Form(enum.Enum):
+    """
+    Represents the "forms" a JSON Typedef schema can take on. The JSON Typedef
+    spec restricts valid schemas to only using certain combinations of keywords.
+    This enum represents which of those valid combinations a schema is using.
+    """
+
     EMPTY = enum.auto()
     REF = enum.auto()
     TYPE = enum.auto()
@@ -15,24 +21,57 @@ class Form(enum.Enum):
 @dataclasses.dataclass
 class Schema:
     """
-    This is a test.
+    Represents a JSON Typedef schema. To construct an instance of Schema, it's
+    recommended you use :func:`from_dict`.
+
+    >>> import jtd
+    >>> schema = jtd.Schema.from_dict({ 'elements': { 'type': 'string' }})
+    >>> schema.form()
+    <Form.ELEMENTS: 5>
+    >>> schema.elements.form()
+    <Form.TYPE: 3>
     """
 
     metadata: Optional[Dict[str, Any]]
-    nullable: Optional[bool]
-    definitions: Optional[Dict[str, 'Schema']]
-    ref: Optional[str]
-    type: Optional[str]
-    enum: Optional[List[str]]
-    elements: Optional['Schema']
-    properties: Optional[Dict[str, 'Schema']]
-    optional_properties: Optional[Dict[str, 'Schema']]
-    additional_properties: Optional[bool]
-    values: Optional['Schema']
-    discriminator: Optional[str]
-    mapping: Optional[Dict[str, 'Schema']]
+    """Additional metadata. Does not affect validation."""
 
-    KEYWORDS = [
+    nullable: Optional[bool]
+    """Describes data that can be JSON ``null`` (Python ``None``)."""
+
+    definitions: Optional[Dict[str, 'Schema']]
+    """A set of definitions that ``ref`` can refer to. Can only appear on root schemas."""
+
+    ref: Optional[str]
+    """A reference to a definition."""
+
+    type: Optional[str]
+    """Describes data that is a boolean, number, string, or timestamp."""
+
+    enum: Optional[List[str]]
+    """Describes data that must be in a predefined list of strings."""
+
+    elements: Optional['Schema']
+    """Describes arrays."""
+
+    properties: Optional[Dict[str, 'Schema']]
+    """Describes required properties of an object."""
+
+    optional_properties: Optional[Dict[str, 'Schema']]
+    """Describes optional properties of an object."""
+
+    additional_properties: Optional[bool]
+    """Describes whether there may be properties not in ``properties`` or ``optional_properties``."""
+
+    values: Optional['Schema']
+    """Describes the values of an object."""
+
+    discriminator: Optional[str]
+    """Specifies the "tag" property of an object, indicating what kind of data it contains."""
+
+    mapping: Optional[Dict[str, 'Schema']]
+    """Describes the data, depending on the value of the "tag" property of an object."""
+
+    _KEYWORDS = [
         "metadata",
         "nullable",
         "definitions",
@@ -48,7 +87,7 @@ class Schema:
         "mapping",
     ]
 
-    TYPE_VALUES = [
+    _TYPE_VALUES = [
         'boolean',
         'int8',
         'uint8',
@@ -62,7 +101,7 @@ class Schema:
         'timestamp',
     ]
 
-    VALID_FORMS = [
+    _VALID_FORMS = [
         # Empty form
         [False, False, False, False, False, False, False, False, False, False],
         # Ref form
@@ -89,6 +128,16 @@ class Schema:
 
     @classmethod
     def from_dict(cls, dict: Dict[str, Any]) -> 'Schema':
+        """
+        Instantiate a Schema from a dictionary. The dictionary should only
+        contain types produced by ``json.loads``; otherwise, the output is not
+        meaningful.
+
+        >>> import jtd
+        >>> jtd.Schema.from_dict({ 'elements': { 'type': 'string' }})
+        Schema(metadata=None, nullable=None, definitions=None, ref=None, type=None, enum=None, elements=Schema(metadata=None, nullable=None, definitions=None, ref=None, type='string', enum=None, elements=None, properties=None, optional_properties=None, additional_properties=None, values=None, discriminator=None, mapping=None), properties=None, optional_properties=None, additional_properties=None, values=None, discriminator=None, mapping=None)
+        """
+
         definitions = None
         if "definitions" in dict:
             definitions = { k: cls.from_dict(v) for k, v in dict["definitions"].items() }
@@ -114,7 +163,7 @@ class Schema:
             mapping = { k: cls.from_dict(v) for k, v in dict["mapping"].items() }
 
         for k in dict.keys():
-            if k not in cls.KEYWORDS:
+            if k not in cls._KEYWORDS:
                 raise AttributeError("illegal keyword")
 
         return Schema(
@@ -134,6 +183,18 @@ class Schema:
         )
 
     def validate(self, root=None):
+        """
+        Checks whether a schema satisfies the semantic rules of JSON Typedef,
+        such as ensuring that all refs have a corresponding definition.
+
+        >>> import jtd
+        >>> schema = jtd.Schema.from_dict({ 'ref': 'xxx' })
+        >>> schema.validate()
+        Traceback (most recent call last):
+            ...
+        TypeError: ref but no definitions
+        """
+
         if root is None:
             root = self
 
@@ -157,7 +218,7 @@ class Schema:
             if self.ref not in root.definitions:
                 raise TypeError("ref to non-existent definition")
 
-        if self.type is not None and self.type not in self.TYPE_VALUES:
+        if self.type is not None and self.type not in self._TYPE_VALUES:
             raise TypeError("type not valid string value")
 
         if self.enum is not None:
@@ -229,10 +290,23 @@ class Schema:
             self.mapping is not None,
         ]
 
-        if form_signature not in self.VALID_FORMS:
+        if form_signature not in self._VALID_FORMS:
             raise TypeError("invalid form")
 
     def form(self) -> Form:
+        """
+        Determine the form of the schema. Meaningful only if :func:`validate`
+        did not throw any exceptions.
+
+        >>> import jtd
+        >>> jtd.Schema.from_dict({}).form()
+        <Form.EMPTY: 1>
+        >>> jtd.Schema.from_dict({ 'enum': ['foo', 'bar' ]}).form()
+        <Form.ENUM: 4>
+        >>> jtd.Schema.from_dict({ 'elements': {} }).form()
+        <Form.ELEMENTS: 5>
+        """
+
         if self.ref is not None:
             return Form.REF
         if self.type is not None:
