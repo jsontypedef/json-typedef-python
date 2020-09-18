@@ -21,5 +21,5 @@ jobs:
       - run: python3 setup.py sdist
       - uses: pypa/gh-action-pypi-publish@master
         with:
-          user: __token__
+          user: ${{ secrets.pypi_username }}
           password: ${{ secrets.pypi_password }}
