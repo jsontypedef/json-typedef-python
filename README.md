@@ -2,11 +2,6 @@
 
 [![PyPI](https://img.shields.io/pypi/v/jtd)](https://pypi.org/project/jtd)
 
-> This package implements JSON Typedef *validation* for JavaScript and
-> TypeScript. If you're trying to do JSON Typedef *code generation*, see
-> ["Generating TypeScript from JSON Typedef Schemas"][jtd-py-codegen] in the
-> JSON Typedef docs.
-
 `jtd` is a Python implementation of [JSON Type Definition][jtd], a schema
 language for JSON. `jtd` primarily gives you two things:
 
@@ -35,12 +30,11 @@ in combination with Python in particular, see:
 
 * [The JSON Typedef Website][jtd]
 * ["Validating JSON in Python with JSON Typedef"][jtd-py-validation]
-* ["Generating Python from JSON Typedef Schemas"][jtd-py-codegen]
 
 ## Basic Usage
 
 > For a more detailed tutorial and guidance on how to integrate `jtd` in your
-> application, see ["Validating JSON in JavaScript with JSON
+> application, see ["Validating JSON in Python with JSON
 > Typedef"][jtd-py-validation] in the JSON Typedef docs.
 
 Here's an example of how you can use this package to validate JSON data against
@@ -158,7 +152,7 @@ import jtd
 def validate_untrusted(schema, data):
     schema.validate()
 
-    # You should tune maxDepth to be high enough that most legitimate schemas
+    # You should tune max_depth to be high enough that most legitimate schemas
     # evaluate without errors, but low enough that an attacker cannot cause a
     # denial of service attack.
     options = jtd.ValidationOptions(max_depth=32)
@@ -186,5 +180,4 @@ validate_untrusted({
 ```
 
 [jtd]: https://jsontypedef.com
-[jtd-py-codegen]: https://jsontypedef.com/docs/python/code-generation
 [jtd-py-validation]: https://jsontypedef.com/docs/python/validation
