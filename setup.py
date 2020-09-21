@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="jtd",
-    version="0.1.0",
+    version="0.1.1",
     author="JSON Typedef Contributors",
     author_email="friends@jsontypedef.com",
     description="A Python implementation of JSON Type Definition",
